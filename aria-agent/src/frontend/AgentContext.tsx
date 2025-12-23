@@ -15,6 +15,8 @@ interface AgentContextType {
   lastMessage: string | null;
   messages: ChatMessage[];
   sendMessage: (text: string) => void;
+  stopExecution: () => void;
+  isExecuting: boolean;
   metrics: {
     cpu: number;
     ram: number;
@@ -142,7 +144,6 @@ export const AgentProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (ws.current?.readyState === WebSocket.OPEN) {
         setStatus('thinking');
 
-        // Add User Message immediately
         setMessages(prev => [...prev, {
             role: 'user',
             content: text,
@@ -155,6 +156,21 @@ export const AgentProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   };
 
+  const stopExecution = () => {
+    if (ws.current?.readyState === WebSocket.OPEN) {
+        console.log('[AgentContext] KILL SWITCH - Sending stop signal');
+        ws.current.send(JSON.stringify({ type: 'stop' }));
+        setStatus('idle');
+        setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: '[SYSTEM] Execution stopped by user.',
+            timestamp: Date.now()
+        }]);
+    }
+  };
+
+  const isExecuting = status === 'thinking' || status === 'speaking' || status === 'listening';
+
   const retryBrainInit = () => {
     // Reconnect to trigger brain initialization check
     if (ws.current) {
@@ -166,7 +182,7 @@ export const AgentProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   return (
-    <AgentContext.Provider value={{ isConnected, status, lastMessage, messages, sendMessage, metrics, language, setLanguage, retryBrainInit }}>
+    <AgentContext.Provider value={{ isConnected, status, lastMessage, messages, sendMessage, stopExecution, isExecuting, metrics, language, setLanguage, retryBrainInit }}>
       {children}
     </AgentContext.Provider>
   );

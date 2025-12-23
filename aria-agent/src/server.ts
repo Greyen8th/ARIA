@@ -259,6 +259,14 @@ wss.on('connection', (ws: WebSocket) => {
           }
       }
 
+      if (message.type === 'stop') {
+          console.log('[KILL-SWITCH] Received stop signal from client');
+          executor.stop();
+          ws.send(JSON.stringify({ type: 'status', status: 'idle' }));
+          ws.send(JSON.stringify({ type: 'result', result: 'Execution stopped by user.' }));
+          return;
+      }
+
       if (message.type === 'execute') {
         ws.send(JSON.stringify({ type: 'status', status: 'thinking' }));
 

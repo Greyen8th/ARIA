@@ -1,10 +1,10 @@
 import { AgentAction, AgentStep, ExecutionLog, Tool, Message, AIProvider } from '../types.js';
-// import { OllamaProvider } from '../providers/ollama.js'; // REMOVED
 import { MultiProviderEngine } from '../providers/multi-provider.js';
 import { Memory } from '../memory/index.js';
 import { getAllTools, getToolByName } from '../tools/index.js';
 import { v4 as uuid } from 'uuid';
 import { PromptManager } from './prompt-manager.js';
+import { logPromptUsage, getSessionId, hashPrompt } from '../brain/prompt-logger.js';
 import * as path from 'path';
 
 const COST_ERROR_PATTERNS = [
@@ -27,6 +27,8 @@ export class AgentExecutor {
   private verbose: boolean;
   private useMultiProvider: boolean;
   private promptManager: PromptManager;
+  private isStopped: boolean = false;
+  private currentLanguage: 'en' | 'it' = 'en';
 
   constructor(options: {
     provider: AIProvider;
@@ -51,20 +53,49 @@ export class AgentExecutor {
     this.promptManager.initialize().catch(err => console.error('PromptManager init failed:', err));
   }
 
-  // Update language dynamically
   setLanguage(lang: 'en' | 'it') {
+    this.currentLanguage = lang;
     this.promptManager.setLanguage(lang);
   }
 
+  stop(): void {
+    this.isStopped = true;
+    console.log('[EXECUTOR] KILL SWITCH ACTIVATED - Stopping execution');
+  }
+
+  resume(): void {
+    this.isStopped = false;
+    console.log('[EXECUTOR] Execution resumed');
+  }
+
+  isRunning(): boolean {
+    return !this.isStopped;
+  }
+
   async execute(task: string, onStep?: (step: AgentStep) => void): Promise<string> {
+    this.isStopped = false;
     const startTime = Date.now();
     const steps: AgentStep[] = [];
     let iterations = 0;
     let lastError: string | undefined;
     let currentProvider = 'ollama';
+    let jsonRetryCount = 0;
+    const MAX_JSON_RETRIES = 2;
 
-    // Get the dynamic system prompt (now respects language setting)
     let systemPrompt = this.promptManager.getSystemPrompt();
+
+    const promptLog = logPromptUsage(
+      systemPrompt,
+      'executor',
+      this.currentLanguage,
+      this.tools.length
+    );
+
+    if (this.verbose) {
+      console.log(`[PROMPT-COMPLIANCE] Session: ${getSessionId()}`);
+      console.log(`[PROMPT-COMPLIANCE] Hash: ${promptLog.promptHash}`);
+      console.log(`[PROMPT-COMPLIANCE] Length: ${promptLog.promptLength} chars`);
+    }
 
     // Context Injection: Recall relevant long-term memories
     try {
@@ -84,6 +115,12 @@ export class AgentExecutor {
     const messages: Message[] = this.memory.getMessages();
 
     while (iterations < this.maxIterations) {
+      if (this.isStopped) {
+        const stopMsg = 'Execution stopped by user (Kill Switch activated)';
+        await this.logExecution(task, steps, stopMsg, false, startTime, 'USER_STOPPED', currentProvider);
+        return stopMsg;
+      }
+
       iterations++;
 
       if (this.verbose) {
@@ -127,7 +164,19 @@ export class AgentExecutor {
           console.log('LLM Response:', response.slice(0, 500));
         }
 
-        const action = this.parseAction(response);
+        let action = this.parseAction(response);
+
+        if (!action && jsonRetryCount < MAX_JSON_RETRIES) {
+          jsonRetryCount++;
+          if (this.verbose) {
+            console.log(`[STRUCTURED-OUTPUT] JSON parse failed, retry ${jsonRetryCount}/${MAX_JSON_RETRIES}`);
+          }
+          messages.push({
+            role: 'system',
+            content: 'ERROR: Your response was not valid JSON. You MUST respond with valid JSON format as specified. Use ```json ... ``` blocks.'
+          });
+          continue;
+        }
 
         if (!action) {
           messages.push({ role: 'assistant', content: response });
@@ -136,6 +185,8 @@ export class AgentExecutor {
           await this.logExecution(task, steps, response, true, startTime, undefined, currentProvider);
           return response;
         }
+
+        jsonRetryCount = 0;
 
         if (action.tool === 'final_answer') {
           const answer = action.params.answer || action.params.response || response;
@@ -181,12 +232,24 @@ export class AgentExecutor {
           continue;
         }
 
+        const toolCallLog = {
+          timestamp: Date.now(),
+          sessionId: getSessionId(),
+          tool: action.tool,
+          params: action.params,
+          reasoning: action.reasoning
+        };
+
+        console.log(`[TOOL-CALL] ${JSON.stringify(toolCallLog)}`);
+
         if (this.verbose) {
           console.log(`Executing tool: ${action.tool}`);
           console.log('Parameters:', JSON.stringify(action.params, null, 2));
         }
 
         const observation = await tool.execute(action.params);
+
+        console.log(`[TOOL-RESULT] tool=${action.tool} | len=${observation.length} | preview=${observation.slice(0, 100).replace(/\n/g, ' ')}`);
 
         if (this.verbose) {
           console.log('Result:', observation.slice(0, 500));

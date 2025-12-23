@@ -1,6 +1,40 @@
 # ARIA - Autonomous Reasoning Intelligence Agent
 
-Un agente AI locale super potente che gira sul tuo MacBook usando Ollama per modelli gratuiti.
+Un agente AI locale super potente che gira sul tuo MacBook usando modelli GGUF locali.
+
+---
+
+## DISCLAIMER (IMPORTANTE)
+
+**ARIA e un agente autonomo con accesso completo al sistema operativo.**
+
+Utilizzando ARIA, dichiari di comprendere e accettare che:
+
+1. **Solo Sistemi Propri**: Usa ARIA esclusivamente su computer di tua proprieta o per cui hai autorizzazione esplicita.
+
+2. **Accesso Completo**: ARIA puo:
+   - Catturare screenshot del tuo schermo
+   - Controllare mouse e tastiera
+   - Leggere e scrivere file
+   - Eseguire comandi di sistema
+   - Navigare il web automaticamente
+   - Scaricare file da internet
+
+3. **Nessuna Responsabilita**: Gli sviluppatori non sono responsabili per:
+   - Danni causati dall'uso improprio di ARIA
+   - Perdita di dati
+   - Violazioni di sicurezza derivanti dall'uso del software
+   - Azioni automatizzate non desiderate
+
+4. **Uso Etico**: Non usare ARIA per:
+   - Accedere a sistemi non autorizzati
+   - Automazione malevola
+   - Violazione di privacy altrui
+   - Attivita illegali
+
+**Procedendo con l'installazione e l'uso, accetti questi termini.**
+
+---
 
 ## Il Cervello di ARIA
 
@@ -182,6 +216,56 @@ ollama pull llama3.2:3b
 - Chiudi altre applicazioni
 - Considera un modello quantizzato (es. :q4_0)
 
+## Sicurezza e Safety Features
+
+ARIA include meccanismi di sicurezza integrati:
+
+### Consenso Primo Avvio
+Al primo avvio, ARIA mostra un modal di consenso che spiega tutte le capability. L'utente deve accettare esplicitamente prima di procedere.
+
+### Kill Switch (Pulsante STOP)
+Durante l'esecuzione di task, un pulsante STOP rosso appare in basso a destra. Cliccandolo, l'esecuzione si interrompe immediatamente.
+
+### Logging Completo
+Tutte le azioni sono loggate:
+- Hash SHA256 del system prompt (verifica compliance)
+- Ogni tool call con parametri e risultati
+- Session ID per tracciabilita
+
+### Permessi macOS
+ARIA richiede:
+- **Screen Recording**: Per la funzione Vision (screenshot)
+- **Accessibility**: Per il controllo mouse/tastiera
+- **Automation**: Per AppleScript e controllo app
+
+Questi permessi sono richiesti esplicitamente da macOS e non possono essere bypassati.
+
+### Dati Locali
+Tutti i dati restano sul tuo computer:
+- Nessun dato inviato a server esterni
+- Modello AI gira completamente in locale
+- Memoria e log salvati in `./aria-data/`
+
 ## Licenza
 
-MIT - Usa come vuoi!
+MIT License
+
+Copyright (c) 2024 ARIA Team
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
