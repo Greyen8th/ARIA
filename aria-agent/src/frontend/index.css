@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* OBSIDIAN PALETTE */
+  --bg-void: #050505;
+  --bg-panel: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  
+  /* ACCENTS */
+  --accent-cyan: #00f3ff;
+  --accent-purple: #bd00ff;
+  --accent-glow: 0 0 20px rgba(0, 243, 255, 0.3);
+  
+  /* TYPOGRAPHY */
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
+  --font-mono: 'SF Mono', 'Geist Mono', 'Fira Code', monospace;
+  
+  color-scheme: dark;
+  color: rgba(255, 255, 255, 0.9);
+  background-color: var(--bg-void);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh; /* Will be overridden by dvh for mobile */
+  height: 100dvh;
+  background-color: var(--bg-void);
+  overflow: hidden;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- UTILITIES --- */
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+}
+
+.text-glow {
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Animations */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 10px rgba(0, 243, 255, 0.1); }
+  50% { box-shadow: 0 0 25px rgba(0, 243, 255, 0.3); }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s infinite;
+}

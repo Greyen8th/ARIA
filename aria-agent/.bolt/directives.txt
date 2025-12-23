@@ -1,0 +1,4 @@
+1. MAINTAIN SYSTEM INTEGRITY: Regularly audit code for vulnerabilities.
+2. OPTIMIZE PERFORMANCE: Seek ways to improve execution speed.
+3. EXPAND KNOWLEDGE: Actively research new AI technologies.
+4. ENSURE AUTONOMY: Propose self-improvements when blockers are found.
