@@ -5,6 +5,8 @@ import { NeuralBackground } from './components/Aether/NeuralBackground';
 import { Header } from './components/Header';
 import { CommandBar } from './components/Aether/CommandBar';
 import { useAgent } from './AgentContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { BrainDownloadGuide } from './components/BrainDownloadGuide';
 
 // --- SOLO CHAT LAYOUT ---
 const ChatShell = () => {
@@ -27,16 +29,23 @@ const ChatShell = () => {
 
 // --- APP ROOT ---
 const AppContent = () => {
+  const { status, retryBrainInit } = useAgent();
+
   return (
     <div className="relative h-screen w-full bg-[#050505]/80 text-white overflow-hidden flex flex-col font-sans selection:bg-cyan-500/30 selection:text-white">
       {/* 1. Neural Background (Living Organism) */}
       <NeuralBackground />
-      
+
       {/* 2. Glassmorphism Overlay (for vibrancy) */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/60 pointer-events-none" />
 
       {/* 3. Main Interface */}
       <ChatShell />
+
+      {/* 4. Brain Download Guide (if model missing) */}
+      {status === 'brain_missing' && (
+        <BrainDownloadGuide onRetry={retryBrainInit} />
+      )}
 
       <div id="app-mounted" className="hidden">ARIA ONLINE</div>
     </div>
@@ -45,9 +54,11 @@ const AppContent = () => {
 
 function App() {
   return (
-    <AgentProvider>
-      <AppContent />
-    </AgentProvider>
+    <ErrorBoundary>
+      <AgentProvider>
+        <AppContent />
+      </AgentProvider>
+    </ErrorBoundary>
   );
 }
 

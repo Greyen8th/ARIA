@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getScreenshot: () => ipcRenderer.invoke('GET_SCREENSHOT'),
   readExternalFile: (filename) => ipcRenderer.invoke('READ_EXTERNAL_FILE', filename),
   analyzeCode: (code) => ipcRenderer.invoke('analyze-code', code),
+  openModelsFolder: () => ipcRenderer.invoke('open-models-folder'),
 
   onServerStatus: (callback) => ipcRenderer.on('server-status', callback),
   onOllamaStatus: (callback) => ipcRenderer.on('ollama-status', callback)

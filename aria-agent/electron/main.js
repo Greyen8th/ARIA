@@ -140,6 +140,16 @@ function createWindow() {
     console.error('[BOOT ERROR] Renderer Failed to Load:', errorCode, errorDescription);
   });
 
+  mainWindow.webContents.on('render-process-gone', (event, details) => {
+    console.error('[BOOT ERROR] Render process gone:', details);
+    if (details.reason !== 'clean-exit') {
+      console.error('[BOOT ERROR] Renderer crashed! Reloading...');
+      setTimeout(() => {
+        mainWindow.reload();
+      }, 1000);
+    }
+  });
+
   if (isDev) {
     console.log('[BOOT] Loading Loading Screen (Dev Mode)...');
     mainWindow.loadFile(path.join(__dirname, 'loading.html'));
@@ -389,7 +399,7 @@ ipcMain.handle('analyze-code', async (event, code) => {
     // In a real scenario, this might invoke a specific agent tool.
     // Here we can return a signal that the request was received,
     // or arguably, the UI should use the existing WebSocket connection.
-    // 
+    //
     // If we MUST handle it here, we would need to fetch() to the local server.
     try {
         const response = await fetch(`http://localhost:${PORT}/api/execute-task`, {
@@ -401,6 +411,24 @@ ipcMain.handle('analyze-code', async (event, code) => {
     } catch (e) {
         console.error('Failed to proxy analyze-code to server:', e);
         return { error: 'Failed to reach Neural Engine' };
+    }
+});
+
+// Open models folder
+ipcMain.handle('open-models-folder', async () => {
+    try {
+        const modelsPath = getResourcePath('resources', 'models');
+
+        // Create directory if it doesn't exist
+        if (!fs.existsSync(modelsPath)) {
+            fs.mkdirSync(modelsPath, { recursive: true });
+        }
+
+        await shell.openPath(modelsPath);
+        return { success: true, path: modelsPath };
+    } catch (error) {
+        console.error('Failed to open models folder:', error);
+        return { success: false, error: error.message };
     }
 });
 

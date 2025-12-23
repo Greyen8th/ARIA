@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 
-type AgentStatus = 'idle' | 'thinking' | 'speaking' | 'listening' | 'error' | 'loading_model' | 'loading_tensors' | 'creating_context' | 'ready';
+type AgentStatus = 'idle' | 'thinking' | 'speaking' | 'listening' | 'error' | 'loading_model' | 'loading_tensors' | 'creating_context' | 'ready' | 'brain_missing';
 type Language = 'en' | 'it';
 
 export interface ChatMessage {
@@ -22,6 +22,7 @@ interface AgentContextType {
   };
   language: Language;
   setLanguage: (lang: Language) => void;
+  retryBrainInit: () => void;
 }
 
 const AgentContext = createContext<AgentContextType | undefined>(undefined);
@@ -113,9 +114,15 @@ export const AgentProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             }
 
             if (data.type === 'error') {
-                setStatus('error');
-                console.error('Agent Error:', data.error);
-                setTimeout(() => setStatus('idle'), 3000);
+                // Check if it's a brain missing error
+                if (data.error && (data.error.includes('brain_missing') || data.error.includes('Brain Error: brain_missing'))) {
+                    setStatus('brain_missing');
+                    console.warn('Neural Core missing - model download required');
+                } else {
+                    setStatus('error');
+                    console.error('Agent Error:', data.error);
+                    setTimeout(() => setStatus('idle'), 3000);
+                }
             }
             
             // Handle Telemetry
@@ -134,7 +141,7 @@ export const AgentProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const sendMessage = (text: string) => {
     if (ws.current?.readyState === WebSocket.OPEN) {
         setStatus('thinking');
-        
+
         // Add User Message immediately
         setMessages(prev => [...prev, {
             role: 'user',
@@ -148,8 +155,18 @@ export const AgentProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   };
 
+  const retryBrainInit = () => {
+    // Reconnect to trigger brain initialization check
+    if (ws.current) {
+      ws.current.close();
+    }
+    setTimeout(() => {
+      connect();
+    }, 500);
+  };
+
   return (
-    <AgentContext.Provider value={{ isConnected, status, lastMessage, messages, sendMessage, metrics, language, setLanguage }}>
+    <AgentContext.Provider value={{ isConnected, status, lastMessage, messages, sendMessage, metrics, language, setLanguage, retryBrainInit }}>
       {children}
     </AgentContext.Provider>
   );
